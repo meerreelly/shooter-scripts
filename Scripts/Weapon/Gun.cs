@@ -1,11 +1,14 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public abstract class Gun : MonoBehaviour
 {
     [SerializeField]
     protected GunData gunData;
     protected Camera cam;
+    [SerializeField]
+    protected AudioMixerGroup audioMixerGroup;
     
     [Header("Keybinds")]
     [SerializeField]
@@ -24,6 +27,7 @@ public abstract class Gun : MonoBehaviour
     private float nextTimeToFire = 0;
     private bool isReloading = false;
     private int totalAmmo = 0;
+    private AudioSource audioSource;
     
     
     public int GetCurrentAmmo() => currentAmmo;
@@ -39,6 +43,8 @@ public abstract class Gun : MonoBehaviour
     {
         currentAmmo = gunData.MagazineSize;
         totalAmmo = gunData.TotalAmmo;
+        audioSource = TryGetComponent<AudioSource>(out var source) ? source : gameObject.AddComponent<AudioSource>();
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
     }
     
     
@@ -104,9 +110,10 @@ public abstract class Gun : MonoBehaviour
     private IEnumerator Reload()
     {
         isReloading = true;
-        if (gunData.ReloadSound)
+        if (gunData.ReloadSound && audioSource)
         {
-            AudioSource.PlayClipAtPoint(gunData.ReloadSound, transform.position);
+            audioSource.resource = gunData.ReloadSound;
+            audioSource.Play();
         }
         yield return new WaitForSeconds(gunData.ReloadTime);
         
@@ -153,9 +160,10 @@ public abstract class Gun : MonoBehaviour
     private void HandleShoot()
     {
         currentAmmo--;
-        if(gunData.ShootSound)
+        if(gunData.ShootSound && audioSource)
         {
-            AudioSource.PlayClipAtPoint(gunData.ShootSound, transform.position);
+            audioSource.resource = gunData.ShootSound;
+            audioSource.Play();
         }
         Shoot();
     }
